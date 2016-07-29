@@ -19,11 +19,15 @@ ELSEIF ( ${MACHINES} MATCHES "i686" )
       set(HOST_PLATFORM  "x86")
 ELSEIF ( ${MACHINES} MATCHES "i386" )
       set(HOST_PLATFORM  "x86")
+ELSE ()
+      set(HOST_PLATFORM  "arm")
 ENDIF ()
 
 #MESSAGE(STATUS "ORRBEC : ${HOST_PLATFORM}")
 
 include(ExternalProject)
+
+IF ( ${HOST_PLATFORM} MATCHES "arm" )
 
 ExternalProject_Add(astra_openni2
   PREFIX astra_openni2
@@ -35,8 +39,25 @@ ExternalProject_Add(astra_openni2
   BUILD_IN_SOURCE 1
   BUILD_COMMAND make release
   INSTALL_DIR openni2
-  INSTALL_COMMAND tar -xjf <SOURCE_DIR>/Packaging/Final/OpenNI-Linux-2.3.tar.bz2 -C <INSTALL_DIR> --strip 1 && mkdir -p <INSTALL_DIR>/include && ln -fs <INSTALL_DIR>/Include <INSTALL_DIR>/include/openni2 && cp ${CMAKE_CURRENT_SOURCE_DIR}/extra/filterlib/${HOST_PLATFORM}/liborbbec.so  ${CMAKE_CURRENT_BINARY_DIR}/openni2/Redist/OpenNI2/Drivers/liborbbec.so
+  INSTALL_COMMAND tar -xjf <SOURCE_DIR>/Packaging/Final/OpenNI-Linux-2.3.tar.bz2 -C <INSTALL_DIR> --strip 1 && mkdir -p <INSTALL_DIR>/include && ln -fs <INSTALL_DIR>/Include <INSTALL_DIR>/include/openni2 
 )
+
+ELSE ()
+
+ExternalProject_Add(astra_openni2
+  PREFIX astra_openni2
+  # SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/astra_openni2/OpenNI2
+  GIT_REPOSITORY https://github.com/tfoote/OpenNI2.git
+  GIT_TAG orbbec_ros
+  CONFIGURE_COMMAND echo "no need to configure" 
+  #${CMAKE_CURRENT_SOURCE_DIR}/libantlr/configure --prefix=<INSTALL_DIR>
+  BUILD_IN_SOURCE 1
+  BUILD_COMMAND make release
+  INSTALL_DIR openni2
+  INSTALL_COMMAND tar -xjf <SOURCE_DIR>/Packaging/Final/OpenNI-Linux-2.3.tar.bz2 -C <INSTALL_DIR> --strip 1 && mkdir -p <INSTALL_DIR>/include && ln -fs <INSTALL_DIR>/Include <INSTALL_DIR>/include/openni2 && cp ${CMAKE_CURRENT_SOURCE_DIR}/extra/filterlib/${HOST_PLATFORM}/liborbbec.so  ${CMAKE_CURRENT_BINARY_DIR}/openni2/Redist/OpenNI2/Drivers/liborbbec.so && mv ${CMAKE_CURRENT_BINARY_DIR}/openni2/Redist/OpenNI2/Drivers/orbbec.ini ${CMAKE_CURRENT_BINARY_DIR}/openni2/Redist/OpenNI2/Drivers/Orbbec.ini
+)
+
+ENDIF ()
 
 generate_dynamic_reconfigure_options(cfg/Astra.cfg)
 add_service_files(FILES
