@@ -1,0 +1,7 @@
+*.pyc
+*~
+\#*
+.#*
+.build
+astra_openni2/Bin
+astra_openni2/Packaging/Final
