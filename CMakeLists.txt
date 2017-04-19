@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
+
 project(astra_camera)
 
-find_package(catkin REQUIRED camera_info_manager dynamic_reconfigure image_transport  nodelet sensor_msgs roscpp message_generation)
+find_package(catkin REQUIRED camera_info_manager dynamic_reconfigure image_transport  nodelet sensor_msgs roscpp message_generation rospack camera_calibration_parsers)
 
 find_package(Boost REQUIRED COMPONENTS system thread)
 
@@ -25,7 +26,7 @@ ExternalProject_Add(astra_openni2
   BUILD_IN_SOURCE 1
   BUILD_COMMAND make release FILTER=${obfilter}
   INSTALL_DIR openni2
-  INSTALL_COMMAND tar -xjf <SOURCE_DIR>/Packaging/Final/OpenNI-Linux-2.3.tar.bz2 -C <INSTALL_DIR> --strip 1 && mkdir -p <INSTALL_DIR>/include && ln -fs <INSTALL_DIR>/Include <INSTALL_DIR>/include/openni2 
+  INSTALL_COMMAND tar -xjf <SOURCE_DIR>/Packaging/Final/OpenNI-Linux-2.3.tar.bz2 -C <INSTALL_DIR> --strip 1 && mkdir -p <INSTALL_DIR>/include && ln -fs <INSTALL_DIR>/Include <INSTALL_DIR>/include/openni2
 )
 
 generate_dynamic_reconfigure_options(cfg/Astra.cfg)
@@ -36,7 +37,7 @@ generate_messages()
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES astra_wrapper
-  CATKIN_DEPENDS camera_info_manager dynamic_reconfigure image_transport nodelet sensor_msgs roscpp message_runtime
+  CATKIN_DEPENDS camera_info_manager dynamic_reconfigure image_transport nodelet sensor_msgs roscpp message_runtime rospack camera_calibration_parsers
   DEPENDS libastra
 )
 
@@ -59,25 +60,33 @@ add_library(astra_wrapper
    src/astra_exception.cpp
    src/astra_video_mode.cpp
 )
-target_link_libraries(astra_wrapper ${catkin_LIBRARIES} -lOpenNI2Orbbec
-  ${Boost_LIBRARIES} )
-add_dependencies(astra_wrapper astra_openni2 ${PROJECT_NAME}_generate_messages_cpp)
 
 add_library(astra_driver_lib
                 src/astra_driver.cpp
 )
-target_link_libraries(astra_driver_lib astra_wrapper ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
-add_dependencies(astra_driver_lib astra_openni2 ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
-
-add_library(astra_camera_nodelet
-   ros/astra_camera_nodelet.cpp
-)
-target_link_libraries(astra_camera_nodelet astra_driver_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
-add_dependencies(astra_camera_nodelet astra_openni2 ${PROJECT_NAME}_gencfg)
 
 add_executable(astra_camera_node
    ros/astra_camera_node.cpp
 )
+
+add_library(astra_camera_nodelet
+   ros/astra_camera_nodelet.cpp
+)
+
+set_target_properties(astra_driver_lib astra_wrapper astra_camera_node astra_camera_nodelet
+  PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE
+)
+
+target_link_libraries(astra_wrapper ${catkin_LIBRARIES} -lOpenNI2Orbbec
+  ${Boost_LIBRARIES} )
+add_dependencies(astra_wrapper astra_openni2 ${PROJECT_NAME}_generate_messages_cpp)
+
+target_link_libraries(astra_driver_lib astra_wrapper ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+add_dependencies(astra_driver_lib astra_openni2 ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
+
+target_link_libraries(astra_camera_nodelet astra_driver_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
+add_dependencies(astra_camera_nodelet astra_openni2 ${PROJECT_NAME}_gencfg)
+
 target_link_libraries(astra_camera_node astra_driver_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
 add_dependencies(astra_camera_node astra_openni2 ${PROJECT_NAME}_gencfg ${PROJECT_NAME}_generate_messages_cpp)
 
