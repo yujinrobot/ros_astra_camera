@@ -39,6 +39,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 
+#include <std_msgs/Time.h>
+
 namespace astra_wrapper
 {
 
@@ -141,7 +143,7 @@ void AstraDriver::advertiseROSTopics()
   ir_info_manager_  = boost::make_shared<camera_info_manager::CameraInfoManager>(ir_nh,  ir_name,  ir_info_url_);
 
   get_serial_server = nh_.advertiseService("get_serial", &AstraDriver::getSerialCb,this);
-
+  pub_fake_rgb_ = nh_.advertise<std_msgs::Time>("signal_rgb", 1);
 }
 
 bool AstraDriver::getSerialCb(astra_camera::GetSerialRequest& req, astra_camera::GetSerialResponse& res) {
@@ -407,6 +409,10 @@ void AstraDriver::newIRFrameCallback(sensor_msgs::ImagePtr image)
       image->header.stamp = image->header.stamp + ir_time_offset_;
 
       pub_ir_.publish(image, getIRCameraInfo(image->width, image->height, image->header.stamp));
+      if ( device_->isIRStreamStarted() )
+      {
+        pub_fake_rgb_.publish(image->header.stamp);
+      }
     }
   }
 }
@@ -423,6 +429,10 @@ void AstraDriver::newColorFrameCallback(sensor_msgs::ImagePtr image)
       image->header.stamp = image->header.stamp + color_time_offset_;
 
       pub_color_.publish(image, getColorCameraInfo(image->width, image->height, image->header.stamp));
+      if ( device_->isColorStreamStarted() )
+      {
+        pub_fake_rgb_.publish(image->header.stamp);
+      }
     }
   }
 }
@@ -476,6 +486,12 @@ void AstraDriver::newDepthFrameCallback(sensor_msgs::ImagePtr image)
         sensor_msgs::ImageConstPtr floating_point_image = rawToFloatingPointConversion(image);
         pub_depth_.publish(floating_point_image, cam_info);
       }
+      
+      if ( !color_subscribers_ && !ir_subscribers_ ) 
+      { 
+        pub_fake_rgb_.publish(image->header.stamp);
+      }
+      
     }
   }
 }
