@@ -39,6 +39,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 
+#include <std_msgs/Time.h>
+
 namespace astra_wrapper
 {
 
@@ -112,12 +114,19 @@ void AstraDriver::advertiseROSTopics()
     pub_ir_ = ir_it.advertiseCamera("image", 1, itssc, itssc, rssc, rssc);
   }
 
+  if (device_->hasColorSensor() || device_->hasIRSensor())
+  {
+    pub_fake_rgb_ = nh_.advertise<std_msgs::Time>("signal_rgb", 1);
+  }
+  
   if (device_->hasDepthSensor())
   {
     image_transport::SubscriberStatusCallback itssc = boost::bind(&AstraDriver::depthConnectCb, this);
     ros::SubscriberStatusCallback rssc = boost::bind(&AstraDriver::depthConnectCb, this);
     pub_depth_raw_ = depth_it.advertiseCamera("image_raw", 1, itssc, itssc, rssc, rssc);
     pub_depth_ = depth_raw_it.advertiseCamera("image", 1, itssc, itssc, rssc, rssc);
+    pub_fake_depth_ = nh_.advertise<std_msgs::Time>("signal_depth", 1);
+  
   }
 
   ////////// CAMERA INFO MANAGER
@@ -141,7 +150,6 @@ void AstraDriver::advertiseROSTopics()
   ir_info_manager_  = boost::make_shared<camera_info_manager::CameraInfoManager>(ir_nh,  ir_name,  ir_info_url_);
 
   get_serial_server = nh_.advertiseService("get_serial", &AstraDriver::getSerialCb,this);
-
 }
 
 bool AstraDriver::getSerialCb(astra_camera::GetSerialRequest& req, astra_camera::GetSerialResponse& res) {
@@ -407,6 +415,10 @@ void AstraDriver::newIRFrameCallback(sensor_msgs::ImagePtr image)
       image->header.stamp = image->header.stamp + ir_time_offset_;
 
       pub_ir_.publish(image, getIRCameraInfo(image->width, image->height, image->header.stamp));
+      if ( device_->isIRStreamStarted() )
+      {
+        pub_fake_rgb_.publish(image->header.stamp);
+      }
     }
   }
 }
@@ -423,6 +435,10 @@ void AstraDriver::newColorFrameCallback(sensor_msgs::ImagePtr image)
       image->header.stamp = image->header.stamp + color_time_offset_;
 
       pub_color_.publish(image, getColorCameraInfo(image->width, image->height, image->header.stamp));
+      if ( device_->isColorStreamStarted() )
+      {
+        pub_fake_rgb_.publish(image->header.stamp);
+      }
     }
   }
 }
@@ -475,6 +491,16 @@ void AstraDriver::newDepthFrameCallback(sensor_msgs::ImagePtr image)
       {
         sensor_msgs::ImageConstPtr floating_point_image = rawToFloatingPointConversion(image);
         pub_depth_.publish(floating_point_image, cam_info);
+      }
+      
+      if ( !color_subscribers_ && !ir_subscribers_ ) 
+      { 
+         pub_fake_rgb_.publish(image->header.stamp);
+      }
+      
+      if (depth_raw_subscribers_ || depth_subscribers_)
+      {
+         pub_fake_depth_.publish(image->header.stamp);
       }
     }
   }

@@ -127,7 +127,9 @@ private:
   image_transport::CameraPublisher pub_depth_raw_;
   image_transport::CameraPublisher pub_ir_;
   ros::Publisher pub_projector_info_;
-
+  ros::Publisher pub_fake_rgb_;
+  ros::Publisher pub_fake_depth_;
+  
   /** \brief Camera info manager objects. */
   boost::shared_ptr<camera_info_manager::CameraInfoManager> color_info_manager_, ir_info_manager_;
 
