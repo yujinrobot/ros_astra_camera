@@ -22,5 +22,7 @@ $ roscd astra_camera && ./scripts/create_udev_rules
 
 6,run astra_camera
 $ roslaunch astra_launch astra.launch
+use astra pro (uvc rgb )
+$ roslaunch astra_launch astrapro.launch
 
 7,you can use rviz or image_view to verify driver
