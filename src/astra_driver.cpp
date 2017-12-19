@@ -713,7 +713,7 @@ std::string AstraDriver::resolveDeviceURI(const std::string& device_id) throw(As
     device_manager_->getConnectedDeviceURIs();
 
   //for tes
-  #if 0
+  #if 1
    for (size_t i = 0; i < available_device_URIs->size(); ++i)
    {
        std::string s = (*available_device_URIs)[i];
@@ -789,14 +789,14 @@ std::string AstraDriver::resolveDeviceURI(const std::string& device_id) throw(As
     for(std::vector<std::string>::const_iterator it = available_device_URIs->begin();
         it != available_device_URIs->end(); ++it)
     {
-	#if 0
-      	try 
+    #if 1
+    try 
 	{
         	std::string serial = device_manager_->getSerial(*it);
         	if (serial.size() > 0 && device_id == serial)
           		return *it;
 	}
-    	#else
+    #else
 	try 
 	{
          	std::set<std::string>::iterator iter;
@@ -851,7 +851,7 @@ void AstraDriver::initDevice()
     try
     {
       std::string device_URI = resolveDeviceURI(device_id_);
-      #if 0
+      #if 1
       if( device_URI == "" ) 
       {
       	boost::this_thread::sleep(boost::posix_time::milliseconds(500));
