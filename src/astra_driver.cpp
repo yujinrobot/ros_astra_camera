@@ -44,7 +44,7 @@
 #include <boost/thread/thread.hpp>
 
 #include <std_msgs/Time.h>
-#define  MULTI_ASTRA 1
+#define  MULTI_ASTRA 0
 
 namespace astra_wrapper
 {
